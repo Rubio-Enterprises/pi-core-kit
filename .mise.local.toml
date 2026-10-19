@@ -1,0 +1,7 @@
+# Repository-owned additions to the template-managed mise contract.
+[tools]
+bun = "1.4.2"
+
+[tasks.test]
+description = "Run the canonical Bun unit tests with positive-count proof"
+run = ["bun run scripts/run-tests.ts"]
