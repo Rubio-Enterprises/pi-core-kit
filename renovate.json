@@ -1,0 +1,7 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>Rubio-Enterprises/.github"],
+  "devcontainer": {
+    "managerFilePatterns": ["/(^|/)\\.devcontainer/devcontainer\\.json$/"]
+  }
+}

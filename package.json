@@ -1,0 +1,26 @@
+{
+  "name": "pi-session-cache",
+  "version": "0.0.0",
+  "description": "Shared file and memory cache primitives for Pi sessions.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.project.json && tsc -p tsconfig.tests.json",
+    "lint": "mise exec -- biome check .",
+    "test": "bun run scripts/run-tests.ts",
+    "typecheck": "tsc -p tsconfig.project.json && tsc -p tsconfig.tests.json"
+  },
+  "packageManager": "bun@1.4.2",
+  "devDependencies": {
+    "@commitlint/cli": "21.2.3",
+    "@commitlint/config-conventional": "21.2.3",
+    "@types/bun": "1.4.2",
+    "typescript": "7.0.2"
+  }
+}
