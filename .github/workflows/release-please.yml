@@ -114,7 +114,7 @@ jobs:
         # that complete gate-property set is not a safe candidate for this.
         #
         # Blast radius: every uses_release_please consumer (repo_type native
-        # or marketplace) renders this step — ~63 onboarded consumers today, not
+        # or marketplace, plus explicit extended-fork opt-ins) renders this step, not
         # just the smaller migration wave that raised it (dotfiles#322).
         #
         # No repo-settings change needed: auto-merge-allowed is already enabled
@@ -122,8 +122,7 @@ jobs:
         #
         # Merge method is read per repository, not assumed, mirroring
         # _merge_method_flag in org_plugin_carrier_pull_requests.py: this
-        # file's condition is `repo_type == native OR is_marketplace`, an OR,
-        # so it also renders for a marketplace repo whose repo_type is
+        # file also renders for explicit fork opt-ins and marketplace repos whose type is
         # extended_fork — a shared-history Sync Target, which org policy
         # makes merge-only so upstream parentage survives. Assuming squash
         # there is a hard 405.
