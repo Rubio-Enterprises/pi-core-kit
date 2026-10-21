@@ -35,6 +35,20 @@ test('every runtime dependency is allowed by the boundary', () => {
   expect(names.filter((name) => !allowed.test(name))).toEqual([]);
 });
 
+test('host-provided libraries are peers, never installed dependencies', () => {
+  const manifest = JSON.parse(
+    readFileSync(join(import.meta.dir, '..', 'package.json'), 'utf8'),
+  ) as {
+    dependencies?: Record<string, string>;
+    peerDependencies?: Record<string, string>;
+  };
+  // Pi supplies these to extensions itself and warns when a package installs its own copy.
+  for (const name of ['typebox']) {
+    expect(manifest.dependencies?.[name]).toBeUndefined();
+    expect(manifest.peerDependencies?.[name]).toBe('*');
+  }
+});
+
 test('every export points at a source module', () => {
   const manifest = JSON.parse(
     readFileSync(join(import.meta.dir, '..', 'package.json'), 'utf8'),

@@ -12,7 +12,9 @@ the rule for third-party libraries in [pi-ui-kit ADR 0003](https://github.com/Ru
 Invariants:
 
 - Runtime imports in `src/` use `node:` built-ins, sibling modules and the libraries allowed in
-  `tests/boundary.test.ts` (today only `typebox`). Never import Pi or pi-ui-kit. Add a library
+  `tests/boundary.test.ts` (today only `typebox`). Pi provides `typebox` to extensions as a
+  virtual module and warns when a package installs its own, so it is a `*` peer with an exact
+  dev pin, never a dependency. Never import Pi or pi-ui-kit. Add a library
   only with an ADR that justifies it, then add it to the boundary test. Code that needs a Pi
   host belongs in pi-ui-kit or in the extension.
 - `atomic-write.ts` is internal: shared by modules here, never exported.

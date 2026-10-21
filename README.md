@@ -6,7 +6,8 @@ Host-independent building blocks for Pi extensions.
 
 No module imports Pi, so each can be tested and reused without a Pi host. Modules use Node
 built-ins plus a short list of justified libraries; today that is only
-[TypeBox](https://github.com/sinclairzx81/typebox), the schema library Pi itself uses. It ships
+[TypeBox](https://github.com/sinclairzx81/typebox), the schema library Pi itself uses. TypeBox
+is a `*` peer: Pi supplies its own copy to extensions, and anything else installs it. It ships
 ESM TypeScript source with no build step, for Bun and Pi's TypeScript extension loader, not
 JavaScript-only loaders. Each module is a
 subpath export; there is no root entry point. UI components that need Pi's TUI live in
@@ -34,7 +35,7 @@ config file module from pi-capability-exposure's config store.
 Pin a release tag:
 
 ```sh
-npm install 'git+https://github.com/Rubio-Enterprises/pi-core-kit.git#v2.1.0'
+npm install 'git+https://github.com/Rubio-Enterprises/pi-core-kit.git#v2.1.2'
 ```
 
 The dependency spec is:
@@ -42,7 +43,7 @@ The dependency spec is:
 ```json
 {
   "dependencies": {
-    "pi-core-kit": "git+https://github.com/Rubio-Enterprises/pi-core-kit.git#v2.1.0"
+    "pi-core-kit": "git+https://github.com/Rubio-Enterprises/pi-core-kit.git#v2.1.2"
   }
 }
 ```
