@@ -1,6 +1,6 @@
 {
   "name": "pi-core-kit",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Host-independent building blocks for Pi extensions: config files and session caches.",
   "license": "MIT",
   "type": "module",
