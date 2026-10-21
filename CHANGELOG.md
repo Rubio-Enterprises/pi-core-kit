@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.1](https://github.com/Rubio-Enterprises/pi-core-kit/compare/v2.1.0...v2.1.1) (2026-10-21)
+
+
+### Bug Fixes
+
+* compile under consumers' strict typescript settings ([ba23c09](https://github.com/Rubio-Enterprises/pi-core-kit/commit/ba23c09850edff1489cebee6aef177bc49d0672d))
+
 ## [2.1.0](https://github.com/Rubio-Enterprises/pi-core-kit/compare/v2.0.0...v2.1.0) (2026-10-21)
 
 
