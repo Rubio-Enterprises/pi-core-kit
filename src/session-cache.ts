@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import * as nodeFs from 'node:fs';
 import {
   closeSync,
   type FSWatcher,
@@ -6,13 +7,13 @@ import {
   openSync,
   readdirSync,
   readFileSync,
-  renameSync,
   statSync,
   unlinkSync,
   watch,
   writeFileSync,
 } from 'node:fs';
 import { join } from 'node:path';
+import { writeAtomic } from './atomic-write.ts';
 
 /** A lock older than this may be taken over even if its process is alive. */
 export const LOCK_STALE_MS = 30_000;
@@ -176,17 +177,12 @@ export function fileCache(dir: string, options?: { now?: () => number }): Sessio
     },
     write(name, value) {
       if (!validName(name)) return;
-      const path = entryPath(name);
-      const temp = `${path}.${process.pid}.${randomBytes(8).toString('hex')}.tmp`;
       try {
-        writeFileSync(temp, JSON.stringify(value), { mode: 0o600, flag: 'wx' });
-        renameSync(temp, path);
+        const json = JSON.stringify(value);
+        if (typeof json !== 'string') return;
+        writeAtomic(nodeFs, entryPath(name), json, 0o600);
       } catch {
-        try {
-          unlinkSync(temp);
-        } catch {
-          // Serialization may fail before creating the temporary file
-        }
+        // Serialization or I/O failure leaves the previous entry intact
       }
     },
     remove(name) {

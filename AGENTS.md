@@ -6,17 +6,24 @@ This repo follows Rubio-Enterprises standards.
 
 pi-core-kit holds host-independent building blocks for Pi extensions. Use
 [GLOSSARY.md](GLOSSARY.md) vocabulary. The split from pi-ui-kit is recorded in
-[pi-ui-kit ADR 0001](https://github.com/Rubio-Enterprises/pi-ui-kit/blob/main/docs/adr/0001-shared-libraries-split-by-dependency.md).
+[pi-ui-kit ADR 0001](https://github.com/Rubio-Enterprises/pi-ui-kit/blob/main/docs/adr/0001-shared-libraries-split-by-dependency.md);
+the rule for third-party libraries in [pi-ui-kit ADR 0003](https://github.com/Rubio-Enterprises/pi-ui-kit/blob/main/docs/adr/0003-core-kit-takes-justified-libraries.md).
 
 Invariants:
 
-- Runtime imports in `src/` use only `node:` built-ins and sibling modules. Never import Pi,
-  pi-ui-kit or any npm package; `tests/boundary.test.ts` enforces this. Code that needs a Pi
+- Runtime imports in `src/` use `node:` built-ins, sibling modules and the libraries allowed in
+  `tests/boundary.test.ts` (today only `typebox`). Never import Pi or pi-ui-kit. Add a library
+  only with an ADR that justifies it, then add it to the boundary test. Code that needs a Pi
   host belongs in pi-ui-kit or in the extension.
+- `atomic-write.ts` is internal: shared by modules here, never exported.
 - Each module is `src/<name>.ts`, exported as the subpath `./<name>`. There is no root entry
   point, so adding a module never changes another module's surface.
 - The package ships TypeScript source; build tasks check types without emitting artifacts.
 - Add a module only when at least two extensions need it.
+
+`config-file`: mechanics only. Never decide what a missing or invalid file means for an
+extension; return a read outcome. `update` must never overwrite a file it cannot parse and must
+re-check the file just before the rename.
 
 `session-cache`: file and memory caches share name validation, JSON serialization and parser
 rejection semantics. Preserve token-checked lock release after stale takeover. Filesystem

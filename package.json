@@ -1,10 +1,11 @@
 {
   "name": "pi-core-kit",
   "version": "2.0.0",
-  "description": "Host-independent building blocks for Pi extensions, using only Node built-ins.",
+  "description": "Host-independent building blocks for Pi extensions: config files and session caches.",
   "license": "MIT",
   "type": "module",
   "exports": {
+    "./config-file": "./src/config-file.ts",
     "./session-cache": "./src/session-cache.ts"
   },
   "files": [
@@ -22,5 +23,8 @@
     "@commitlint/config-conventional": "21.2.3",
     "@types/bun": "1.4.2",
     "typescript": "7.0.2"
+  },
+  "dependencies": {
+    "typebox": "^1.3.27"
   }
 }
