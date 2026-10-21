@@ -12,10 +12,10 @@
     "src"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.project.json && tsc -p tsconfig.tests.json",
+    "build": "tsc -p tsconfig.project.json && tsc -p tsconfig.strict.json && tsc -p tsconfig.tests.json",
     "lint": "mise exec -- biome check .",
     "test": "bun run scripts/run-tests.ts",
-    "typecheck": "tsc -p tsconfig.project.json && tsc -p tsconfig.tests.json"
+    "typecheck": "tsc -p tsconfig.project.json && tsc -p tsconfig.strict.json && tsc -p tsconfig.tests.json"
   },
   "packageManager": "bun@1.4.2",
   "devDependencies": {

@@ -25,9 +25,9 @@ export interface ConfigFs extends AtomicWriteFs {
 
 export interface ConfigOptions<S extends TSchema | undefined = undefined> {
   /** Validates the whole root. Omit it to accept any JSON object. */
-  schema?: S;
+  schema?: S | undefined;
   /** Filesystem to use; defaults to `node:fs`. For tests. */
-  fs?: ConfigFs;
+  fs?: ConfigFs | undefined;
 }
 
 type Shape<S> = S extends TSchema ? Static<S> : ConfigRoot;
@@ -119,7 +119,7 @@ export class ConfigFile<S extends TSchema | undefined = undefined> {
   readonly path: string;
   private readonly fs: ConfigFs;
   private readonly schema: S | undefined;
-  private cache?: { stamp: string; outcome: ConfigRead<Shape<S>> };
+  private cache: { stamp: string; outcome: ConfigRead<Shape<S>> } | undefined;
 
   constructor(path: string, options: ConfigOptions<S> = {}) {
     this.path = path;
@@ -138,7 +138,7 @@ export class ConfigFile<S extends TSchema | undefined = undefined> {
       return { status: 'invalid', reason: `cannot read (${message(error)})` };
     }
     if (this.cache?.stamp === stamp) return this.cache.outcome;
-    const outcome = readConfig(this.path, { fs: this.fs, schema: this.schema });
+    const outcome = readConfig<S>(this.path, { fs: this.fs, schema: this.schema });
     if (outcome.status === 'missing') this.cache = undefined;
     else this.cache = { stamp, outcome };
     return outcome;

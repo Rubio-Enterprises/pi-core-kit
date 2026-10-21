@@ -19,6 +19,8 @@ Invariants:
 - Each module is `src/<name>.ts`, exported as the subpath `./<name>`. There is no root entry
   point, so adding a module never changes another module's surface.
 - The package ships TypeScript source; build tasks check types without emitting artifacts.
+  Consumers compile that source with their own settings, so `tsconfig.strict.json` checks it
+  under the strictest common ones (including `exactOptionalPropertyTypes`); keep it passing.
 - Add a module only when at least two extensions need it.
 
 `config-file`: mechanics only. Never decide what a missing or invalid file means for an
