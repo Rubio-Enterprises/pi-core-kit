@@ -1,6 +1,6 @@
 {
   "name": "pi-core-kit",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Host-independent building blocks for Pi extensions, using only Node built-ins.",
   "license": "MIT",
   "type": "module",
