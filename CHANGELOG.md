@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.2](https://github.com/Rubio-Enterprises/pi-core-kit/compare/v2.1.1...v2.1.2) (2026-10-21)
+
+
+### Bug Fixes
+
+* take typebox as a peer instead of installing it ([ce81db2](https://github.com/Rubio-Enterprises/pi-core-kit/commit/ce81db2f03ed80d44e24663d943c284ee5dd3ec2))
+
 ## [2.1.1](https://github.com/Rubio-Enterprises/pi-core-kit/compare/v2.1.0...v2.1.1) (2026-10-21)
 
 
