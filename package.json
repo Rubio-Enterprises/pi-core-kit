@@ -1,11 +1,11 @@
 {
-  "name": "pi-session-cache",
+  "name": "pi-core-kit",
   "version": "1.0.0",
-  "description": "Shared file and memory cache primitives for Pi sessions.",
+  "description": "Host-independent building blocks for Pi extensions, using only Node built-ins.",
   "license": "MIT",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    "./session-cache": "./src/session-cache.ts"
   },
   "files": [
     "src"

@@ -18,12 +18,12 @@ import {
   memoryCache,
   openCache,
   type SessionCache,
-} from '../src/index.ts';
+} from '../src/session-cache.ts';
 
 const roots: string[] = [];
 const stops: Array<() => void> = [];
 function directory() {
-  const root = mkdtempSync(join(tmpdir(), 'pi-session-cache-'));
+  const root = mkdtempSync(join(tmpdir(), 'pi-core-kit-'));
   roots.push(root);
   return root;
 }
@@ -164,7 +164,7 @@ test('file locks exclude a second instance and an independent process', () => {
   expect(second.tryLock('results')).toBeUndefined();
   const child = spawnSync(process.execPath, [
     '-e',
-    `import { fileCache } from ${JSON.stringify(join(import.meta.dir, '../src/index.ts'))}; process.exit(fileCache(${JSON.stringify(dir)}).tryLock('results') ? 1 : 0);`,
+    `import { fileCache } from ${JSON.stringify(join(import.meta.dir, '../src/session-cache.ts'))}; process.exit(fileCache(${JSON.stringify(dir)}).tryLock('results') ? 1 : 0);`,
   ]);
   expect(child.status).toBe(0);
   release();

@@ -270,6 +270,6 @@ drift_note="${drift_note}${plugin_note}${workflow_note}"
 # line (first matching stack facet wins; ts-first keeps polyglot repos on the
 # message their primary package.json workflow implies). The drift NOTE (if any) is appended.
 # shellcheck disable=SC2016
-printf 'pi-session-cache dev toolchain ready (mise): biome, lefthook, shellcheck, shfmt, gitleaks, prettier, yq on PATH. Use `mise run build/test/lint` (or the package.json scripts).%s\n' "$drift_note"
+printf 'pi-core-kit dev toolchain ready (mise): biome, lefthook, shellcheck, shfmt, gitleaks, prettier, yq on PATH. Use `mise run build/test/lint` (or the package.json scripts).%s\n' "$drift_note"
 
 exit 0

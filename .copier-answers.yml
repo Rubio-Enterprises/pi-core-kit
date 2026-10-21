@@ -33,7 +33,7 @@ is_monorepo: false
 is_public: true
 lint_hooks_workload_class: light
 linter_floor: biome
-project_name: pi-session-cache
+project_name: pi-core-kit
 repo_type: native
 ts_dom_surface: false
 ts_module_world: node

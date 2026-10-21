@@ -3,7 +3,7 @@
 # Source: Rubio-Enterprises/standards, template/scripts/common/cloud-setup.sh.jinja
 # Repo-specific changes go in scripts/repo-local/cloud-setup.sh.
 # scripts/common/cloud-setup.sh — TEMPLATE-OWNED core of the Claude Code on
-# the web "Setup script" for pi-session-cache's cloud environment.
+# the web "Setup script" for pi-core-kit's cloud environment.
 #
 # OWNERSHIP (shim/common/repo-local layout): this file is rendered by the
 # rubio-standards template on every `copier update` — do NOT edit it in a
@@ -183,9 +183,9 @@ __smoke_check_failed() {
 }
 
 if [ -n "$__smoke" ]; then
-  echo "cloud-setup: SMOKE ($__smoke) — pi-session-cache on $(uname -s)/$(uname -m); cloud-only sections skipped" >&2
+  echo "cloud-setup: SMOKE ($__smoke) — pi-core-kit on $(uname -s)/$(uname -m); cloud-only sections skipped" >&2
 else
-  echo "cloud-setup: building pi-session-cache environment cache (epoch ${CACHE_EPOCH:-unset})" >&2
+  echo "cloud-setup: building pi-core-kit environment cache (epoch ${CACHE_EPOCH:-unset})" >&2
 fi
 
 # GitHub shorthand in marketplace/plugin sources otherwise selects SSH inside

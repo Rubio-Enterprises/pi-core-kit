@@ -1,13 +1,21 @@
-# pi-session-cache
+# pi-core-kit
 
-[![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
+[![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/Rubio-Enterprises/pi-core-kit)
 
-Shared file and memory cache primitives for Pi sessions.
+Host-independent building blocks for Pi extensions.
 
-Coordinate cache readers and refreshers across processes without coupling entries to a
-specific extension. Extracted from pi-subscription-usage. Uses only Node built-ins and
-ships ESM TypeScript source with no build step or runtime dependencies. Intended for
-Bun and Pi's TypeScript extension loader, not JavaScript-only loaders.
+Every module uses only Node built-ins and never imports Pi, so it can be tested and reused
+without a Pi host. It ships ESM TypeScript source with no build step or runtime dependencies,
+for Bun and Pi's TypeScript extension loader, not JavaScript-only loaders. Each module is a
+subpath export; there is no root entry point. UI components that need Pi's TUI live in
+[pi-ui-kit](https://github.com/Rubio-Enterprises/pi-ui-kit), which may depend on this package;
+this package never depends on it.
+
+Formerly `pi-session-cache`. The session cache was extracted from pi-subscription-usage.
+
+| Module | Purpose |
+| --- | --- |
+| `pi-core-kit/session-cache` | File and memory caches coordinated across processes |
 
 ## Table of Contents
 
@@ -19,10 +27,10 @@ Bun and Pi's TypeScript extension loader, not JavaScript-only loaders.
 
 ## Install
 
-Once the first release is tagged:
+Pin a release tag:
 
 ```sh
-npm install 'git+https://github.com/Rubio-Enterprises/pi-session-cache.git#v1.0.0'
+npm install 'git+https://github.com/Rubio-Enterprises/pi-core-kit.git#v2.0.0'
 ```
 
 The dependency spec is:
@@ -30,7 +38,7 @@ The dependency spec is:
 ```json
 {
   "dependencies": {
-    "pi-session-cache": "git+https://github.com/Rubio-Enterprises/pi-session-cache.git#v1.0.0"
+    "pi-core-kit": "git+https://github.com/Rubio-Enterprises/pi-core-kit.git#v2.0.0"
   }
 }
 ```
@@ -38,7 +46,7 @@ The dependency spec is:
 ## Usage
 
 ```ts
-import { openCache } from 'pi-session-cache';
+import { openCache } from 'pi-core-kit/session-cache';
 
 const cache = openCache('/tmp/my-session-cache');
 const parse = (raw: unknown) => typeof raw === 'number' ? raw : undefined;
@@ -60,6 +68,8 @@ stop();
 ```
 
 ## API
+
+### `pi-core-kit/session-cache`
 
 All constructors return the `SessionCache` interface. Names must match
 `^[A-Za-z0-9][A-Za-z0-9._-]*$` exactly. Invalid names return undefined from
@@ -100,7 +110,7 @@ store credentials in cache entries.
 
 ## Contributing
 
-Questions and bug reports belong in [issues](https://github.com/Rubio-Enterprises/pi-session-cache/issues).
+Questions and bug reports belong in [issues](https://github.com/Rubio-Enterprises/pi-core-kit/issues).
 Pull requests are welcome. Use Conventional Commits and run `mise run lint`,
 `mise run typecheck` and `mise run test` before submitting. `mise run setup` installs
 the pinned tools and dependencies. Tests use Bun and temporary directories.
