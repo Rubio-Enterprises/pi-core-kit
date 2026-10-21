@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://github.com/Rubio-Enterprises/pi-core-kit/compare/v2.0.0...v2.1.0) (2026-10-21)
+
+
+### Features
+
+* add the config-file module ([099aed6](https://github.com/Rubio-Enterprises/pi-core-kit/commit/099aed6324e270e7398665cf7bd7b77612ed01e4))
+
 ## [2.0.0](https://github.com/Rubio-Enterprises/pi-core-kit/compare/v1.0.0...v2.0.0) (2026-10-21)
 
 
