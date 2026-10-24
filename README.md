@@ -101,20 +101,28 @@ missing or invalid file means (fail loudly, warn once, fall back to defaults).
   mark, requires a JSON object, then applies the schema.
 - `describeErrors(schema, value): string` formats schema problems as `path: message; …`, for an
   extension that validates single entries itself.
-- `new ConfigFile(path, { schema?, fs? })`:
-  - `read(): ConfigRead` stats the file on each call and re-reads it only when its modification
-    time or size changed. It returns the same outcome object until then, so callers can skip
-    re-deriving state by comparing identity.
+- `new ConfigFile(path, { schema?, fs?, now? })`:
+  - `read(): ConfigRead` stats the file on each call. It re-reads the file when its modification
+    time, size or inode changed, and also while its modification time is recent: until a read
+    starts more than 2 seconds after that time (git's racy-clean rule), it re-reads and compares
+    the text. After that the stat alone decides. It returns the same outcome object while the
+    text is unchanged, so callers can skip re-deriving state by comparing identity. `now` is the
+    clock this uses (default `Date.now`), for tests.
   - `update(edit: (root) => root): void` edits safely. `edit` gets a mutable copy of the current
     root (`{}` for a missing file) and may run more than once, so keep it pure. It refuses to
     overwrite a file it cannot read or parse, validates the result against the schema, keeps
     the file's mode (0600 for a new file), writes through an exclusive temporary file and an
     atomic rename, and starts over if the file changed meanwhile, giving up after three tries.
-- `ConfigFs` is the injectable subset of `node:fs` the module uses, for tests.
+- `ConfigFs` is the injectable subset of `node:fs` the module uses, for tests. Its `statSync`
+  result may include `ino`; without it, `read` can miss a same-size rename of an older file.
 
 This is not a lock: two writers can both succeed in turn, each re-applying its edit to the other's
-result. Change detection uses modification time and size, so a same-size rewrite within the
-filesystem's timestamp resolution can be missed by `read` until the next change.
+result. File times come from a coarse clock, so two writes within one tick can share a
+modification time. That is why `read` compares text until the modification time is more than 2
+seconds old; a same-size rewrite in place or by rename is seen, even on filesystems with 1-second
+timestamps. A same-size rewrite in place can still be missed if a tool resets the modification
+time to an old value, or if the clock that stamps the file runs more than a second behind this
+process's clock, as a file server's can on a network filesystem.
 
 ### `pi-core-kit/session-cache`
 
