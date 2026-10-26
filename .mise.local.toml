@@ -2,6 +2,6 @@
 [tools]
 bun = "1.4.2"
 
-[tasks.test]
+[tasks."test:ts"]
 description = "Run the canonical Bun unit tests with positive-count proof"
 run = ["bun run scripts/run-tests.ts"]
