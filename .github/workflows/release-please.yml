@@ -23,12 +23,7 @@ jobs:
   # maximum executing job is 47 minutes. A tighter per-class value, where
   # present, is deliberate and must remain unchanged.
   release-please:
-    # release-please is a pure GitHub-API job (no docker daemon, sudo, or
-    # browser), matching the glue runner tier's capability profile per
-    # mac-dev-playbook docs/homelab/references/architecture/runner-routing.md.
-    # The `|| '["ubuntu-latest"]'` fallback is a hosted label so public repos —
-    # where the private-visibility org var is invisible — keep working.
-    runs-on: ${{ fromJSON(vars.RUNNERS || '{}').light || fromJSON('["ubuntu-latest"]') }}
+    runs-on: ${{ fromJSON(vars.RUNNERS || '{}').small || fromJSON('["ubuntu-slim"]') }}
     timeout-minutes: 120
     steps:
       - name: Mint release-please App token
