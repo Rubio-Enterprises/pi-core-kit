@@ -42,7 +42,7 @@ jobs:
     if: >-
       github.event_name == 'schedule' && github.event.schedule == '0 9 * * 1'
       || github.event_name == 'workflow_dispatch'
-    uses: Rubio-Enterprises/.github/.github/workflows/secret-scan.yml@427623d6179953834b50c1663facac001aed0700 # v4
+    uses: Rubio-Enterprises/.github/.github/workflows/secret-scan.yml@main
     with: { mode: trufflehog }
 
   cache-seed:
@@ -64,9 +64,9 @@ jobs:
     # Rendered wherever `gate_typescript` is (has_typescript and
     # enforce_typecheck), so the seeder exists precisely where the gate does.
     if: github.event_name == 'push'
-    uses: Rubio-Enterprises/.github/.github/workflows/typecheck-ts.yml@427623d6179953834b50c1663facac001aed0700 # v4
+    uses: Rubio-Enterprises/.github/.github/workflows/typecheck-ts.yml@main
     with: { seed-caches: true }
-    # config_model native (ADR-0033): forward the read-only standards-reader App
+    # ADR-0033: forward the read-only standards-reader App
     # so the reusable can clone the Shared Config Checkout; it fails without it.
     secrets:
       STANDARDS_READER_APP_ID: ${{ secrets.STANDARDS_READER_APP_ID }}
