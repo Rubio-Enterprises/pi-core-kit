@@ -18,7 +18,8 @@ export type ConfigRead<T = ConfigRoot> =
   | { readonly status: 'invalid'; readonly reason: string };
 
 export interface ConfigFs extends AtomicWriteFs {
-  statSync(path: string): { mtimeMs: number; size: number; mode: number };
+  /** `ino` is optional; when present, `ConfigFile.read` also notices a file replaced by rename. */
+  statSync(path: string): { mtimeMs: number; size: number; mode: number; ino?: number | undefined };
   readFileSync(path: string, encoding: 'utf8'): string;
   mkdirSync(path: string, options: { recursive: true }): unknown;
 }
@@ -30,9 +31,25 @@ export interface ConfigOptions<S extends TSchema | undefined = undefined> {
   fs?: ConfigFs | undefined;
 }
 
+export interface ConfigFileOptions<S extends TSchema | undefined = undefined>
+  extends ConfigOptions<S> {
+  /** Clock for change detection, in epoch milliseconds; defaults to `Date.now`. For tests. */
+  now?: (() => number) | undefined;
+}
+
 type Shape<S> = S extends TSchema ? Static<S> : ConfigRoot;
 
 const MISSING: ConfigRead<never> = Object.freeze({ status: 'missing' });
+
+/**
+ * How long a file's stamp (modification time, size, inode) stays racy, after git's racy-clean
+ * rule. File times come from a coarse clock, so a same-size write within one tick of the last
+ * leaves the stamp unchanged. `ConfigFile.read` trusts a stamp only once it has read the file
+ * more than this long after its modification time: any later write then gets a later time.
+ * Two seconds covers filesystems with 1-second timestamps, with room for the kernel's coarse
+ * clock lagging `Date.now`.
+ */
+const RACY_MS = 2_000;
 
 function message(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -109,38 +126,71 @@ interface Snapshot {
   size: number;
 }
 
+interface Cached<T> {
+  stamp: string;
+  /** The text the outcome came from; undefined when reading failed. */
+  text: string | undefined;
+  outcome: ConfigRead<T>;
+  /** Read more than `RACY_MS` after the modification time, so the stamp alone can be trusted. */
+  settled: boolean;
+}
+
 /**
  * One config file: cached reads and safe updates.
  *
- * `read` re-reads only when the file's modification time or size changes, and returns the same
- * outcome object until then, so callers can skip re-deriving state by comparing identity.
+ * `read` re-reads when the file's modification time, size or inode changes, and also while the
+ * modification time is recent (see `RACY_MS`). It returns the same outcome object while the
+ * text is unchanged, so callers can skip re-deriving state by comparing identity.
  */
 export class ConfigFile<S extends TSchema | undefined = undefined> {
   readonly path: string;
   private readonly fs: ConfigFs;
   private readonly schema: S | undefined;
-  private cache: { stamp: string; outcome: ConfigRead<Shape<S>> } | undefined;
+  private readonly now: () => number;
+  private cache: Cached<Shape<S>> | undefined;
 
-  constructor(path: string, options: ConfigOptions<S> = {}) {
+  constructor(path: string, options: ConfigFileOptions<S> = {}) {
     this.path = path;
     this.fs = options.fs ?? nodeFs;
     this.schema = options.schema;
+    this.now = options.now ?? Date.now;
   }
 
   read(): ConfigRead<Shape<S>> {
-    let stamp: string;
+    // Taken before the stat and read, so the content read reflects every write before it.
+    const checkedAt = this.now();
+    let stat: ReturnType<ConfigFs['statSync']>;
     try {
-      const stat = this.fs.statSync(this.path);
-      stamp = `${stat.mtimeMs}:${stat.size}`;
+      stat = this.fs.statSync(this.path);
     } catch (error) {
       this.cache = undefined;
       if (isMissing(error)) return MISSING;
       return { status: 'invalid', reason: `cannot read (${message(error)})` };
     }
-    if (this.cache?.stamp === stamp) return this.cache.outcome;
-    const outcome = readConfig<S>(this.path, { fs: this.fs, schema: this.schema });
-    if (outcome.status === 'missing') this.cache = undefined;
-    else this.cache = { stamp, outcome };
+    const stamp = `${stat.mtimeMs}:${stat.size}:${stat.ino ?? ''}`;
+    const cache = this.cache;
+    if (cache?.stamp === stamp && cache.settled) return cache.outcome;
+    // Unchanged text (or the same read failure) keeps the cached outcome object.
+    let text: string | undefined;
+    let outcome: ConfigRead<Shape<S>>;
+    try {
+      const current = this.fs.readFileSync(this.path, 'utf8');
+      outcome = cache?.text === current ? cache.outcome : parseConfigText<S>(current, this.schema);
+      text = current;
+    } catch (error) {
+      if (isMissing(error)) {
+        this.cache = undefined;
+        return MISSING;
+      }
+      const reason = `cannot read (${message(error)})`;
+      outcome =
+        cache?.text === undefined &&
+        cache?.outcome.status === 'invalid' &&
+        cache.outcome.reason === reason
+          ? cache.outcome
+          : { status: 'invalid', reason };
+    }
+    this.cache = { stamp, text, outcome, settled: checkedAt - stat.mtimeMs > RACY_MS };
     return outcome;
   }
 

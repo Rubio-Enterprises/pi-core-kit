@@ -19,6 +19,105 @@ afterEach(() => {
     fs.rmSync(directory, { recursive: true, force: true });
 });
 
+/** Every file's modification time; size follows the text. */
+const MTIME = 1_800_000_000_000;
+
+function failure(code: string, text: string) {
+  return Object.assign(new Error(text), { code });
+}
+
+/**
+ * An in-memory `ConfigFs` whose modification time never moves, as on a filesystem whose
+ * timestamp tick spans every write. New files take the lowest free inode number, so a rename
+ * can reuse the inode it replaced. With `ino: false` it reports no inode numbers, like a custom
+ * `ConfigFs` written before `ino` existed.
+ */
+function memoryFs(options: { ino?: boolean } = {}) {
+  const files = new Map<string, { text: string; ino: number }>();
+  const open = new Map<number, string>();
+  const calls: string[] = [];
+  let nextFd = 3;
+  let readFailure: Error | undefined;
+  const freeIno = () => {
+    const used = new Set([...files.values()].map((file) => file.ino));
+    let ino = 1;
+    while (used.has(ino)) ino++;
+    return ino;
+  };
+  const get = (path: string) => {
+    const file = files.get(path);
+    if (!file) throw failure('ENOENT', `ENOENT: no such file, ${path}`);
+    return file;
+  };
+  const statSync =
+    options.ino === false
+      ? (path: string) => {
+          calls.push('stat');
+          const file = get(path);
+          return { mtimeMs: MTIME, size: Buffer.byteLength(file.text), mode: 0o100600 };
+        }
+      : (path: string) => {
+          calls.push('stat');
+          const file = get(path);
+          return {
+            mtimeMs: MTIME,
+            size: Buffer.byteLength(file.text),
+            mode: 0o100600,
+            ino: file.ino,
+          };
+        };
+  const fs: ConfigFs = {
+    statSync,
+    readFileSync(path) {
+      calls.push('read');
+      if (readFailure) throw readFailure;
+      return get(path).text;
+    },
+    mkdirSync() {
+      return;
+    },
+    openSync(path) {
+      if (files.has(path)) throw failure('EEXIST', `EEXIST: file exists, ${path}`);
+      files.set(path, { text: '', ino: freeIno() });
+      open.set(nextFd, path);
+      return nextFd++;
+    },
+    writeFileSync(fd, data) {
+      get(open.get(fd) ?? '').text = data;
+    },
+    fchmodSync() {},
+    closeSync(fd) {
+      open.delete(fd);
+    },
+    renameSync(from, to) {
+      const file = get(from);
+      files.delete(from);
+      files.set(to, file);
+    },
+    unlinkSync(path) {
+      get(path);
+      files.delete(path);
+    },
+  };
+  return {
+    fs,
+    calls,
+    /** Rewrites a file in place, keeping its inode. */
+    write(path: string, text: string) {
+      const file = files.get(path);
+      if (file) file.text = text;
+      else files.set(path, { text, ino: freeIno() });
+    },
+    inode: (path: string) => get(path).ino,
+    failReads(error: Error | undefined) {
+      readFailure = error;
+    },
+  };
+}
+
+/** What `ConfigFile.update` writes for a root, so rewrites of one-digit values keep the size. */
+const written = (root: object) => `${JSON.stringify(root, null, 2)}\n`;
+
 const DenyList = Type.Object(
   { tools: Type.Optional(Type.Array(Type.String({ minLength: 1 }))) },
   { additionalProperties: false },
@@ -104,6 +203,9 @@ describe('ConfigFile.read', () => {
 
   test('stats once per read and reads the file only when it changed', () => {
     const { path } = fixture('{}');
+    // Old enough that the stamp is trusted at once, whatever the filesystem's timestamp tick.
+    const old = new Date('2020-01-01T00:00:00Z');
+    fs.utimesSync(path, old, old);
     const calls: string[] = [];
     const file = new ConfigFile(path, {
       fs: {
@@ -121,6 +223,15 @@ describe('ConfigFile.read', () => {
     file.read();
     file.read();
     expect(calls).toEqual(['stat', 'read', 'stat']);
+  });
+
+  test('sees same-size rewrites on the real filesystem, whatever its timestamp tick', () => {
+    const { path } = fixture();
+    const file = new ConfigFile(path);
+    for (let i = 0; i < 20; i++) {
+      fs.writeFileSync(path, `{"v":"x${i % 10}"}`);
+      expect(file.read()).toEqual({ status: 'value', value: { v: `x${i % 10}` } });
+    }
   });
 
   test('caches an invalid file until it changes, and forgets a deleted one', () => {
@@ -144,6 +255,142 @@ describe('ConfigFile.read', () => {
       } as ConfigFs,
     });
     expect(file.read()).toEqual({ status: 'invalid', reason: 'cannot read (denied)' });
+  });
+});
+
+describe('ConfigFile.read with an unchanged stamp', () => {
+  const path = '/config/settings.json';
+
+  test('sees a same-size rewrite in place while the modification time is recent', () => {
+    const memory = memoryFs();
+    memory.write(path, '{"v":1}');
+    const file = new ConfigFile(path, { fs: memory.fs, now: () => MTIME + 500 });
+    const first = file.read();
+    memory.write(path, '{"v":2}');
+    const second = file.read();
+    expect(second).toEqual({ status: 'value', value: { v: 2 } });
+    expect(second).not.toBe(first);
+  });
+
+  test.each([
+    ['without inode numbers', false],
+    ['with inode numbers', true],
+  ])(
+    'sees a same-size rename by ConfigFile.update while the modification time is recent, %s',
+    (_, ino) => {
+      const memory = memoryFs({ ino });
+      memory.write(path, written({ v: 1 }));
+      const now = () => MTIME + 1_000;
+      const reader = new ConfigFile(path, { fs: memory.fs, now });
+      const writer = new ConfigFile(path, { fs: memory.fs, now });
+      expect(reader.read()).toEqual({ status: 'value', value: { v: 1 } });
+      writer.update(() => ({ v: 2 }));
+      expect(reader.read()).toEqual({ status: 'value', value: { v: 2 } });
+    },
+  );
+
+  test('sees renames that reuse the inode number while the modification time is recent', () => {
+    const memory = memoryFs();
+    memory.write(path, written({ v: 1 }));
+    const reader = new ConfigFile(path, { fs: memory.fs, now: () => MTIME });
+    const writer = new ConfigFile(path, { fs: memory.fs });
+    reader.read();
+    const inode = memory.inode(path);
+    writer.update(() => ({ v: 2 }));
+    writer.update(() => ({ v: 3 }));
+    expect(memory.inode(path)).toBe(inode);
+    expect(reader.read()).toEqual({ status: 'value', value: { v: 3 } });
+  });
+
+  test('sees a rename by inode number after the stamp is trusted', () => {
+    const memory = memoryFs();
+    memory.write(path, written({ v: 1 }));
+    const reader = new ConfigFile(path, { fs: memory.fs, now: () => MTIME + 60_000 });
+    reader.read();
+    new ConfigFile(path, { fs: memory.fs }).update(() => ({ v: 2 }));
+    memory.calls.length = 0;
+    expect(reader.read()).toEqual({ status: 'value', value: { v: 2 } });
+    expect(memory.calls).toEqual(['stat', 'read']);
+  });
+
+  test('returns the same outcome object while the text is unchanged', () => {
+    const memory = memoryFs();
+    memory.write(path, written({ v: 1 }));
+    const file = new ConfigFile(path, { fs: memory.fs, now: () => MTIME });
+    const first = file.read();
+    expect(file.read()).toBe(first);
+    memory.write(path, written({ v: 1 }));
+    expect(file.read()).toBe(first);
+    // A rename with the same text changes the inode but not the outcome.
+    new ConfigFile(path, { fs: memory.fs }).update(() => ({ v: 1 }));
+    expect(file.read()).toBe(first);
+  });
+
+  test('trusts the stamp, statting without reading, once read more than 2 s after the modification time', () => {
+    const memory = memoryFs();
+    memory.write(path, '{"v":1}');
+    let now = MTIME + 2_000;
+    const file = new ConfigFile(path, { fs: memory.fs, now: () => now });
+    const first = file.read();
+    expect(file.read()).toBe(first);
+    expect(memory.calls).toEqual(['stat', 'read', 'stat', 'read']);
+    now = MTIME + 2_001;
+    memory.calls.length = 0;
+    expect(file.read()).toBe(first);
+    expect(file.read()).toBe(first);
+    expect(file.read()).toBe(first);
+    expect(memory.calls).toEqual(['stat', 'read', 'stat', 'stat']);
+  });
+
+  test('a modification time in the future stays racy', () => {
+    const memory = memoryFs();
+    memory.write(path, '{"v":1}');
+    const file = new ConfigFile(path, { fs: memory.fs, now: () => MTIME - 60_000 });
+    file.read();
+    memory.write(path, '{"v":2}');
+    expect(file.read()).toEqual({ status: 'value', value: { v: 2 } });
+  });
+
+  test('a same-size rewrite that breaks the JSON is a new invalid outcome', () => {
+    const memory = memoryFs();
+    memory.write(path, '{"v":1}');
+    const file = new ConfigFile(path, { fs: memory.fs, now: () => MTIME });
+    file.read();
+    memory.write(path, '{"v"::}');
+    const broken = file.read();
+    expect(broken.status).toBe('invalid');
+    expect(broken.status === 'invalid' && broken.reason).toStartWith('invalid JSON (');
+    expect(file.read()).toBe(broken);
+  });
+
+  test('a read failure on re-check is reported, then the same object until it clears', () => {
+    const memory = memoryFs();
+    memory.write(path, '{"v":1}');
+    const file = new ConfigFile(path, { fs: memory.fs, now: () => MTIME });
+    const first = file.read();
+    memory.failReads(failure('EACCES', 'denied'));
+    const denied = file.read();
+    expect(denied).toEqual({ status: 'invalid', reason: 'cannot read (denied)' });
+    expect(file.read()).toBe(denied);
+    memory.failReads(failure('EIO', 'broken'));
+    expect(file.read()).toEqual({ status: 'invalid', reason: 'cannot read (broken)' });
+    memory.failReads(undefined);
+    const again = file.read();
+    expect(again).toEqual(first);
+    expect(again).not.toBe(first);
+  });
+
+  test('a file removed between stat and read is missing and forgotten', () => {
+    const memory = memoryFs();
+    memory.write(path, '{"v":1}');
+    const file = new ConfigFile(path, { fs: memory.fs, now: () => MTIME });
+    const first = file.read();
+    memory.failReads(failure('ENOENT', 'gone'));
+    expect(file.read()).toEqual({ status: 'missing' });
+    memory.failReads(undefined);
+    const back = file.read();
+    expect(back).toEqual(first);
+    expect(back).not.toBe(first);
   });
 });
 
