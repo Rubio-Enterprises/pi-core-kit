@@ -19,8 +19,8 @@ jobs:
         with:
           persist-credentials: false
       - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
-      # config_model native (ADR-0033): bootstrap the Shared Config Checkout and
-      # the pinned tools; .mise.toml cannot load before it.
+      # Provision the Shared Config Directory and pinned tools before
+      # running tasks that rely on shared configuration.
       - uses: Rubio-Enterprises/.github/actions/standards-bootstrap@main
         with:
           app-id: ${{ secrets.STANDARDS_READER_APP_ID }}
