@@ -1,6 +1,6 @@
 # Changes here will be overwritten by Copier; NEVER edit this file manually.
-_commit: template/v1.55.159
-_rubio_template_version: template/v1.55.159
+_commit: template/v1.55.161
+_rubio_template_version: template/v1.55.161
 _src_path: https://github.com/Rubio-Enterprises/standards.git
 container_registry: ghcr.io/Rubio-Enterprises
 default_branch: main
@@ -15,7 +15,6 @@ enforcement_tier: internal
 fork_release_please: true
 has_ansible: false
 has_codewiki: false
-has_codex_plugin: false
 has_container_image: false
 has_go: false
 has_herdr_plugin: false
@@ -47,5 +46,3 @@ typecheck_workload_class: small
 upstream_branch: ''
 upstream_url: ''
 uses_release_please: true
-
-#copier updated

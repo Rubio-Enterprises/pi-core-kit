@@ -64,6 +64,9 @@ jobs:
     # Rendered wherever `gate_typescript` is (has_typescript and
     # enforce_typecheck), so the seeder exists precisely where the gate does.
     if: github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: read
     uses: Rubio-Enterprises/.github/.github/workflows/typecheck-ts.yml@main
     with: { seed-caches: true }
     # ADR-0033: forward the read-only standards-reader App
