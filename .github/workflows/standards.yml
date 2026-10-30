@@ -67,7 +67,7 @@ jobs:
     uses: Rubio-Enterprises/.github/.github/workflows/typecheck-ts.yml@main
     with: { seed-caches: true }
     # ADR-0033: forward the read-only standards-reader App
-    # so the reusable can clone the Shared Config Checkout; it fails without it.
+    # so the reusable can clone the Shared Config Directory; it fails without it.
     secrets:
       STANDARDS_READER_APP_ID: ${{ secrets.STANDARDS_READER_APP_ID }}
       STANDARDS_READER_APP_PRIVATE_KEY: ${{ secrets.STANDARDS_READER_APP_PRIVATE_KEY }}

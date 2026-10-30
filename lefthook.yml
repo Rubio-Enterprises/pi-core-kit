@@ -25,15 +25,23 @@ pre-commit:
   # event only through `commands`.
   commands:
     standards-ready:
-      # Folded: the same one-line command, within the 120-column yamllint floor.
       run: >-
-        test -f .standards-config/config/lefthook/base.yml || { echo "shared config missing:
-        run mise bootstrap --only repos,tools" >&2; exit 1; }
+        for parent in
+        .standards-config/config/lefthook/base.yml
+        .standards-config/config/lefthook/biome.yml
+        .standards-config/config/lefthook/biome-native.yml
+        .standards-config/config/lefthook/ts.yml
+        ; do test -f "$parent" || { echo "shared config missing or incomplete: $parent;
+        run mise bootstrap --only repos,tools" >&2; exit 1; }; done
 
 commit-msg:
   commands:
     standards-ready:
-      # Folded: the same one-line command, within the 120-column yamllint floor.
       run: >-
-        test -f .standards-config/config/lefthook/base.yml || { echo "shared config missing:
-        run mise bootstrap --only repos,tools" >&2; exit 1; }
+        for parent in
+        .standards-config/config/lefthook/base.yml
+        .standards-config/config/lefthook/biome.yml
+        .standards-config/config/lefthook/biome-native.yml
+        .standards-config/config/lefthook/ts.yml
+        ; do test -f "$parent" || { echo "shared config missing or incomplete: $parent;
+        run mise bootstrap --only repos,tools" >&2; exit 1; }; done
