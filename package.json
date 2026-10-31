@@ -14,7 +14,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.project.json && tsc -p tsconfig.strict.json && tsc -p tsconfig.tests.json",
     "lint": "mise exec -- biome check .",
-    "test": "bun run scripts/run-tests.ts",
+    "test": "bun test tests",
     "typecheck": "tsc -p tsconfig.project.json && tsc -p tsconfig.strict.json && tsc -p tsconfig.tests.json"
   },
   "peerDependencies": {
