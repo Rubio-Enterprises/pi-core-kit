@@ -34,4 +34,4 @@ rejection semantics. Preserve token-checked lock release after stale takeover. F
 failures must remain best effort, with `openCache` providing the in-memory fallback.
 
 Use temporary directories for tests; never write to the real Pi agent directory.
-The test runner must prove a positive executed-test count for the Test Gate.
+`mise run test` writes the JUnit report the Test Gate checks (at least one test case, no failures).
