@@ -9,7 +9,7 @@ min_version = "2026.10.19"
 
 [tools]
 node = "24.21.0"
-bun = "1.4.2"
+bun = "1.4.4"
 
 [tasks.test]
 description = "bun test, with the JUnit report the Test Gate checks"
