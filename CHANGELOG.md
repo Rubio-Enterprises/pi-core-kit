@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.3](https://github.com/Rubio-Enterprises/pi-core-kit/compare/v2.1.2...v2.1.3) (2026-11-02)
+
+
+### Bug Fixes
+
+* **config-file:** detect same-size rewrites within one timestamp tick ([#28](https://github.com/Rubio-Enterprises/pi-core-kit/issues/28)) ([38f77ec](https://github.com/Rubio-Enterprises/pi-core-kit/commit/38f77ecb38d2dfbeb93aee945f2138032d28e555))
+
 ## [2.1.2](https://github.com/Rubio-Enterprises/pi-core-kit/compare/v2.1.1...v2.1.2) (2026-10-21)
 
 
