@@ -1,0 +1,17 @@
+{
+  "name": "pi-core-kit",
+  "mounts": [
+    "source=${devcontainerId}-node-modules,target=${containerWorkspaceFolder}/node_modules,type=volume"
+  ],
+  "securityOpt": ["no-new-privileges=false"],
+  "onCreateCommand": "sudo chown vscode node_modules && mise run setup",
+  "remoteEnv": {
+    "NODE_AUTH_TOKEN": "${localEnv:NODE_AUTH_TOKEN}"
+  },
+  "build": {
+    "dockerfile": "../../.standards/node_modules/@rubio-enterprises/standards/image/Dockerfile",
+    "context": "../..",
+    "target": "local"
+  },
+  "features": {}
+}
