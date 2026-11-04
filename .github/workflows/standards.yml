@@ -50,14 +50,14 @@ jobs:
     uses: Rubio-Enterprises/.github/.github/workflows/release-please.yml@main
     secrets: inherit
 
-  repository-image:
+  dev-container-image:
     needs: files
     if: github.event_name != 'schedule' && needs.files.outputs.image == 'true'
     permissions:
       contents: read
       id-token: write
       packages: write
-    uses: Rubio-Enterprises/.github/.github/workflows/repository-image.yml@main
+    uses: Rubio-Enterprises/.github/.github/workflows/dev-container-image.yml@main
 
   codewiki-pages:
     needs: files
