@@ -19,5 +19,5 @@ reports/
 .vite/
 .turbo/
 .tsbuildinfo
-.standards/
 lefthook-local.yml
+.venv/

@@ -1,0 +1,5 @@
+# Repository toolchain pins only, installed by Dockerfile
+# Check tools are supplied by base at /opt/standards
+[tools]
+node = "24.22.1"
+bun = "1.4.4"

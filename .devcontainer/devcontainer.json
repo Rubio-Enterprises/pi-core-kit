@@ -1,12 +1,8 @@
 {
   "name": "pi-core-kit",
-  "image": "ghcr.io/rubio-enterprises/pi-core-kit/devcontainer:main",
-  "mounts": [
-    "source=${devcontainerId}-node-modules,target=${containerWorkspaceFolder}/node_modules,type=volume"
-  ],
-  "securityOpt": ["no-new-privileges=false"],
-  "onCreateCommand": "sudo chown vscode node_modules && mise run setup",
-  "remoteEnv": {
-    "NODE_AUTH_TOKEN": "${localEnv:NODE_AUTH_TOKEN}"
-  }
+  "dockerComposeFile": ["../compose.yaml"],
+  "service": "dev",
+  "workspaceFolder": "${localWorkspaceFolder}",
+  "remoteUser": "vscode",
+  "updateRemoteUserUID": false
 }
