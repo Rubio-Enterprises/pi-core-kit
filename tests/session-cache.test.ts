@@ -2,6 +2,7 @@ import { afterEach, describe, expect, spyOn, test } from 'bun:test';
 import { spawnSync } from 'node:child_process';
 import * as nodeFs from 'node:fs';
 import {
+  linkSync,
   mkdirSync,
   mkdtempSync,
   readdirSync,
@@ -289,6 +290,40 @@ test('watch costs a bounded number of stat calls for a burst of events in a larg
   } finally {
     stat.mockRestore();
   }
+});
+
+test('watch reconciliation scan catches a change that named no entry, at most once per interval', async () => {
+  const dir = directory();
+  let clock = 0;
+  const c = present(fileCache(dir, { now: () => clock }));
+  c.write('b', 1);
+  const names: Array<string | undefined> = [];
+  stops.push(c.watch((name) => names.push(name)));
+  // The first event is followed by a scan after the debounce
+  c.write('a', 1);
+  await Bun.sleep(500);
+  expect(names).toEqual(['a']);
+  names.length = 0;
+  // Writing through a hard link raises an event that names no .json entry, so only a scan
+  // can notice that b changed.
+  linkSync(join(dir, 'b.json'), join(dir, 'b.json.link'));
+  writeFileSync(join(dir, 'b.json.link'), '{"changed":true}');
+  clock = 100;
+  c.write('a', 2);
+  await Bun.sleep(600);
+  // The scan is inside its rate-limit interval, so it has not run yet
+  expect(names).toEqual(['a']);
+  names.length = 0;
+  // Still inside the ten-second interval after the first scan
+  clock = 5_000;
+  c.write('a', 3);
+  await Bun.sleep(600);
+  expect(names).toEqual(['a']);
+  names.length = 0;
+  clock = 9_800;
+  c.write('a', 4);
+  await Bun.sleep(700);
+  expect([...names].sort()).toEqual(['a', 'b']);
 });
 
 test('watch keeps scans rate-limited and silent after it is stopped', async () => {
