@@ -11,6 +11,11 @@ the rule for third-party libraries in [pi-ui-kit ADR 0003](https://github.com/Ru
 
 Invariants:
 
+- **Architecture decisions**: an ADR records why a rule exists. Before changing a decision, check
+  `docs/adr/` for an accepted ADR; reversing one needs a superseding ADR. Write one only if a
+  person approved it: in the session, or in an approved plan or `delegate-to-agent` issue that
+  names the ADR. Otherwise the PR description is the record. Follow
+  [the format](docs/adr/0001-record-architecture-decisions.md), which states the ADR test.
 - Runtime imports in `src/` use `node:` built-ins, sibling modules and the libraries allowed in
   `tests/boundary.test.ts` (today only `typebox`). Pi provides `typebox` to extensions as a
   virtual module and warns when a package installs its own, so it is a `*` peer with an exact
