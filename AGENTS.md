@@ -6,8 +6,9 @@ This repo follows Rubio-Enterprises standards.
 
 pi-core-kit holds host-independent building blocks for Pi extensions. Use
 [GLOSSARY.md](GLOSSARY.md) vocabulary. The split from pi-ui-kit is recorded in
-[pi-ui-kit ADR 0001](https://github.com/Rubio-Enterprises/pi-ui-kit/blob/main/docs/adr/0001-shared-libraries-split-by-dependency.md);
-the rule for third-party libraries in [pi-ui-kit ADR 0003](https://github.com/Rubio-Enterprises/pi-ui-kit/blob/main/docs/adr/0003-core-kit-takes-justified-libraries.md).
+[pi-ui-kit ADR 0004](https://github.com/Rubio-Enterprises/pi-ui-kit/blob/main/docs/adr/0004-shared-libraries-split-by-dependency.md).
+The current rule for third-party libraries is in the invariants below; its rationale was
+recorded in [pi-ui-kit ADR 0003](https://github.com/Rubio-Enterprises/pi-ui-kit/blob/56a708ddfc05b4bce12b2d454721d04703f4372d/docs/adr/0003-core-kit-takes-justified-libraries.md).
 
 Invariants:
 
