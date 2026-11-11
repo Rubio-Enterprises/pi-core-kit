@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, spyOn, test } from 'bun:test';
 import { spawnSync } from 'node:child_process';
+import * as nodeFs from 'node:fs';
 import {
   mkdirSync,
   mkdtempSync,
@@ -250,6 +251,62 @@ test('watch sees another instance write and ignores locks and temporary files', 
   second.write('results', 5);
   await Bun.sleep(250);
   expect(names).toEqual(['results']);
+});
+
+test('watch reports removals and replacements of a named entry', async () => {
+  const dir = directory();
+  const c = present(fileCache(dir));
+  c.write('results', 1);
+  const names: Array<string | undefined> = [];
+  stops.push(c.watch((name) => names.push(name)));
+  c.remove('results');
+  await Bun.sleep(250);
+  expect(names).toEqual(['results']);
+  names.length = 0;
+  c.write('results', 2);
+  await Bun.sleep(250);
+  expect(names).toEqual(['results']);
+});
+
+test('watch costs a bounded number of stat calls for a burst of events in a large directory', async () => {
+  const dir = directory();
+  const entries = 3000;
+  const burst = 40;
+  for (let index = 0; index < entries; index++)
+    writeFileSync(join(dir, `active-${index}.json`), '{}');
+  const writer = present(fileCache(dir));
+  const names = new Set<string | undefined>();
+  const stat = spyOn(nodeFs, 'statSync');
+  try {
+    stops.push(present(fileCache(dir)).watch((name) => names.add(name)));
+    stat.mockClear();
+    for (let index = 0; index < burst; index++) writer.write(`burst-${index}`, index);
+    await Bun.sleep(600);
+    for (let index = 0; index < burst; index++) expect(names.has(`burst-${index}`)).toBe(true);
+    // One stat per event, plus at most one reconciliation scan; per-event scans would cost
+    // entries x burst (120,000) calls.
+    expect(stat.mock.calls.length).toBeLessThan(2 * entries);
+  } finally {
+    stat.mockRestore();
+  }
+});
+
+test('watch keeps scans rate-limited and silent after it is stopped', async () => {
+  const dir = directory();
+  const c = present(fileCache(dir));
+  const names: Array<string | undefined> = [];
+  const stop = c.watch((name) => names.push(name));
+  c.write('results', 1);
+  stop();
+  const stat = spyOn(nodeFs, 'statSync');
+  try {
+    c.write('later', 2);
+    await Bun.sleep(400);
+    expect(names).toEqual([]);
+    expect(stat.mock.calls.length).toBe(0);
+  } finally {
+    stat.mockRestore();
+  }
 });
 
 test('unusable directories return undefined and openCache falls back to memory', () => {

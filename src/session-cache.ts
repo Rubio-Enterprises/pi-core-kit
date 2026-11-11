@@ -18,6 +18,13 @@ import { writeAtomic } from './atomic-write.ts';
 /** A lock older than this may be taken over even if its process is alive. */
 export const LOCK_STALE_MS = 30_000;
 
+/** Quiet period after the last directory event before the reconciliation scan runs. */
+const SCAN_DEBOUNCE_MS = 250;
+/** Neither a burst of events nor a steady stream delays a pending scan past this. */
+const SCAN_MAX_WAIT_MS = 2_000;
+/** Minimum spacing between two full directory scans of one watch. */
+const SCAN_MIN_INTERVAL_MS = 2_000;
+
 export interface SessionCache {
   /** Returns undefined for missing, unreadable or parser-rejected entries. */
   read<T>(name: string, parse: (raw: unknown) => T | undefined): T | undefined;
@@ -246,50 +253,102 @@ export function fileCache(dir: string, options?: { now?: () => number }): Sessio
     },
     watch(onChange) {
       const listener = notifications(onChange);
-      const snapshot = () => {
+      const signature = (name: string): string | undefined => {
+        try {
+          const stat = statSync(entryPath(name));
+          return stat.isFile()
+            ? `${stat.ino}:${stat.mtimeMs}:${stat.ctimeMs}:${stat.size}`
+            : undefined;
+        } catch {
+          // Entries may disappear while being examined
+          return undefined;
+        }
+      };
+      const scan = () => {
         const entries = new Map<string, string>();
         try {
           for (const filename of readdirSync(dir)) {
             const name = filename.slice(0, -5);
             if (!(filename.endsWith('.json') && validName(name))) continue;
-            try {
-              const stat = statSync(entryPath(name));
-              if (stat.isFile())
-                entries.set(name, `${stat.ino}:${stat.mtimeMs}:${stat.ctimeMs}:${stat.size}`);
-            } catch {
-              // Entries may disappear while scanning
-            }
+            const current = signature(name);
+            if (current !== undefined) entries.set(name, current);
           }
         } catch {
           // Watching remains best effort if the directory becomes inaccessible
         }
         return entries;
       };
-      let previous = snapshot();
+      let known = scan();
+      const record = (name: string, current: string | undefined) => {
+        if (known.get(name) === current) return;
+        if (current === undefined) known.delete(name);
+        else known.set(name, current);
+        listener.changed(name);
+      };
+
+      // Directory events can coalesce several changed files into one filename, so every
+      // event also asks for a full scan. The scan is trailing-debounced and rate-limited:
+      // the cost of one scan is paid at most once per interval, however many events arrive.
+      let stopped = false;
+      let scanTimer: ReturnType<typeof setTimeout> | undefined;
+      let lastScanAt = Number.NEGATIVE_INFINITY;
+      let pendingSince: number | undefined;
+      const cancelScan = () => {
+        clearTimeout(scanTimer);
+        scanTimer = undefined;
+        pendingSince = undefined;
+      };
+      const requestScan = () => {
+        if (stopped) return;
+        const at = performance.now();
+        pendingSince ??= at;
+        const due = Math.max(
+          Math.min(at + SCAN_DEBOUNCE_MS, pendingSince + SCAN_MAX_WAIT_MS),
+          lastScanAt + SCAN_MIN_INTERVAL_MS,
+        );
+        clearTimeout(scanTimer);
+        scanTimer = setTimeout(
+          () => {
+            cancelScan();
+            lastScanAt = performance.now();
+            const current = scan();
+            for (const entry of new Set([...known.keys(), ...current.keys()])) {
+              if (known.get(entry) !== current.get(entry)) listener.changed(entry);
+            }
+            known = current;
+          },
+          Math.max(0, due - at),
+        );
+        scanTimer.unref?.();
+      };
+
       let watcher: FSWatcher | undefined;
       try {
         watcher = watch(dir, (_event, filename) => {
-          if (!filename) {
+          if (stopped) return;
+          if (filename) {
+            const file = String(filename);
+            if (!file.endsWith('.json')) return;
+            const name = file.slice(0, -5);
+            if (!validName(name)) return;
+            // One stat of the named file settles added, changed and removed
+            record(name, signature(name));
+          } else {
             listener.changed(undefined);
-            return;
           }
-          const file = String(filename);
-          if (!file.endsWith('.json')) return;
-          const name = file.slice(0, -5);
-          if (validName(name)) listener.changed(name);
-          // Directory events can coalesce several changed files into one filename
-          const current = snapshot();
-          for (const entry of new Set([...previous.keys(), ...current.keys()])) {
-            if (previous.get(entry) !== current.get(entry)) listener.changed(entry);
-          }
-          previous = current;
+          requestScan();
         });
-        watcher.on('error', () => watcher?.close());
+        watcher.on('error', () => {
+          cancelScan();
+          watcher?.close();
+        });
         watcher.unref?.();
       } catch {
         // Polling callers can continue when watching is unavailable
       }
       return () => {
+        stopped = true;
+        cancelScan();
         listener.stop();
         watcher?.close();
       };
