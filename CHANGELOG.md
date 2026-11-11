@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.1.3](https://github.com/Rubio-Enterprises/pi-core-kit/compare/v2.1.2...v2.1.3) (2026-11-11)
+
+
+### Bug Fixes
+
+* **config-file:** detect same-size rewrites within one timestamp tick ([#28](https://github.com/Rubio-Enterprises/pi-core-kit/issues/28)) ([38f77ec](https://github.com/Rubio-Enterprises/pi-core-kit/commit/38f77ecb38d2dfbeb93aee945f2138032d28e555))
+* **devcontainer:** drop image-inherited features from the feature lock ([#49](https://github.com/Rubio-Enterprises/pi-core-kit/issues/49)) ([d024341](https://github.com/Rubio-Enterprises/pi-core-kit/commit/d024341247fcf2191b6cc5289ec35736d0a982b1))
+* **session-cache:** stat only the named file per watch event ([#56](https://github.com/Rubio-Enterprises/pi-core-kit/issues/56)) ([7aa6b02](https://github.com/Rubio-Enterprises/pi-core-kit/commit/7aa6b0298171d4dc9dd5d33b8ff1f1073564bccf))
+
 ## [2.1.2](https://github.com/Rubio-Enterprises/pi-core-kit/compare/v2.1.1...v2.1.2) (2026-10-21)
 
 
