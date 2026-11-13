@@ -4,7 +4,11 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 export RUBIO_BUILD_GITHUB_TOKEN := env('GH_TOKEN', env('GITHUB_TOKEN', ''))
 export REPO_DIR := justfile_directory()
 export COMPOSE_PROJECT_NAME := "repo-" + sha256(justfile_directory())
-export GIT_COMMON_DIR := `git rev-parse --path-format=absolute --git-common-dir`
+unexport GIT_COMMON_DIR
+export RUBIO_GIT_COMMON_DIR := `env -u GIT_COMMON_DIR git rev-parse --path-format=absolute --git-common-dir`
+
+_run := if path_exists('/opt/standards') == 'true' { '' } else { 'docker compose run --rm -T dev' }
+interactive := if path_exists('/opt/standards') == 'true' { '' } else { 'docker compose run --rm dev' }
 
 # Show available recipes
 _default:
@@ -12,43 +16,38 @@ _default:
 
 # Build dev container image
 build:
-    @docker volume create rubio-uv-cache >/dev/null
-    @docker volume create rubio-npm-cache >/dev/null
-    @docker volume create rubio-gomod-cache >/dev/null
-    @docker volume create rubio-cargo-registry >/dev/null
-    @docker volume create rubio-coursier-cache >/dev/null
-    docker compose build --pull dev
+    @if [ ! -d /opt/standards ]; then bin/build.sh; fi
 
 # Build the dev image, sync dependencies into volumes, and install git hooks
 setup: build
-    docker compose run --rm -T dev bin/setup.sh </dev/null
-    docker compose run --rm -T dev /opt/standards/bin/install-hooks </dev/null
+    {{_run}} bin/setup.sh </dev/null
+    {{_run}} /opt/standards/bin/install-hooks </dev/null
 
 # Run standards checks inside the container
 check:
-    docker compose run --rm -T dev standards check </dev/null
+    {{_run}} standards check </dev/null
 
 # Run formatters and fixers inside the container
 fmt:
-    docker compose run --rm -T dev standards fmt </dev/null
+    {{_run}} standards fmt </dev/null
 
 # Run pull-request conventions check inside the container
 check-pr:
-    docker compose run --rm -T dev standards check-pr </dev/null
+    {{_run}} standards check-pr </dev/null
 
 # Open interactive shell inside the dev container
 shell:
-    docker compose run --rm dev bash
+    {{interactive}} bash
 
 # Execute arbitrary command inside the dev container
 exec *args:
-    docker compose run --rm -T dev "$@" </dev/null
+    {{_run}} "$@" </dev/null
 
 test *args:
-    docker compose run --rm -T dev bin/test.sh "$@" </dev/null
+    {{_run}} bin/test.sh "$@" </dev/null
 
 typecheck *args:
-    docker compose run --rm -T dev bin/typecheck.sh "$@" </dev/null
+    {{_run}} bin/typecheck.sh "$@" </dev/null
 
 setup-deps *args:
-    docker compose run --rm -T dev bin/setup-deps.sh "$@" </dev/null
+    {{_run}} bin/setup-deps.sh "$@" </dev/null

@@ -1,6 +1,12 @@
 # Agent context
 
-This repo follows Rubio-Enterprises standards.
+## Commands
+
+Run every project command through `just`, which runs it in this repository's dev image; the host carries no project toolchain.
+
+In a fresh checkout: `just build`, then `just setup`. `just --list` shows the recipes.
+
+Single test: `just exec bun test tests/config-file.test.ts`. JUnit reports go to `reports/test/`.
 
 ## Repository guidance
 
@@ -41,23 +47,3 @@ failures must remain best effort, with `openCache` providing the in-memory fallb
 
 Use temporary directories for tests; never write to the real Pi agent directory.
 `just test` writes the JUnit report the Test Gate checks (at least one test case, no failures).
-
-## Commands
-
-First command in a fresh checkout: `just build`.
-Never install toolchains on the host — all project commands run in the dev image through `just`.
-
-```bash
-just build
-just setup
-just check
-just fmt
-just check-pr
-just test
-just typecheck
-just setup-deps
-just shell
-just exec <cmd...>
-```
-
-Single test: `just exec uv run pytest path::test` (Python); otherwise prefix the underlying runner with `just exec`.

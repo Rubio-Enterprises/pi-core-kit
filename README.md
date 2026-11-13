@@ -166,11 +166,10 @@ store credentials in cache entries.
 ## Contributing
 
 Questions and bug reports belong in [issues](https://github.com/Rubio-Enterprises/pi-core-kit/issues).
-Pull requests are welcome. Use Conventional Commits and run `mise run check`,
-`mise run typecheck` and `mise run test` before submitting. On a fresh clone, run
-`mise trust && mise run setup` first (with `NODE_AUTH_TOKEN` able to read GitHub Packages): it
-installs the `@rubio-enterprises/standards` package, the pinned tools, the Git hooks and the
-dependencies. Tests use Bun and temporary directories.
+Pull requests are welcome. Use Conventional Commits and run `just check`,
+`just typecheck` and `just test` before submitting. On a fresh clone, run
+`just build && just setup` first: the dev image supplies the standards Checks and pinned tools,
+and setup installs the Git hooks and dependencies into container volumes. Tests use Bun and temporary directories.
 
 ## License
 
